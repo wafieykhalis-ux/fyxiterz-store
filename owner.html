@@ -4,120 +4,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FYXITERZ - Owner Panel</title>
+<title>Staff Login - FYXITERZ</title>
 
 <style>
 *{box-sizing:border-box}
 body{
  margin:0;
- background:#f6f6f6;
- color:#222;
- font-family:Arial,sans-serif
-}
-header{
- background:white;
- padding:17px;
- border-bottom:1px solid #eee;
+ background:#f7f7f7;
+ font-family:Arial,sans-serif;
  display:flex;
- justify-content:space-between;
- align-items:center
+ align-items:center;
+ justify-content:center;
+ min-height:100vh;
+ padding:20px;
+ color:#222
 }
-header strong{font-size:21px}
-button{
- cursor:pointer;
- border:0;
- border-radius:7px;
- padding:12px;
- background:#222;
- color:white
-}
-.logout{background:#eee;color:#222}
-main{max-width:850px;margin:auto;padding:18px}
-.panel{
+.box{
  background:white;
- padding:18px;
- border:1px solid #eee;
- border-radius:10px;
- margin-bottom:18px
-}
-h2{font-size:17px;margin-top:0}
-input,textarea{
  width:100%;
- padding:12px;
- margin:7px 0 13px;
+ max-width:380px;
+ padding:25px;
+ border:1px solid #eee;
+ border-radius:12px
+}
+h1{text-align:center;font-size:25px;margin:5px}
+p{text-align:center;color:#777;font-size:13px}
+input{
+ width:100%;
+ padding:13px;
+ margin:9px 0;
  border:1px solid #ddd;
  border-radius:7px;
  font-size:14px
 }
-textarea{min-height:75px;resize:vertical}
-label{font-size:13px;color:#555}
-.product{
- border:1px solid #eee;
- border-radius:8px;
- padding:13px;
- margin:10px 0
-}
-.product img{
+button{
  width:100%;
- max-width:130px;
- height:90px;
- object-fit:cover;
- border-radius:6px
+ padding:13px;
+ background:#222;
+ color:white;
+ border:0;
+ border-radius:7px;
+ font-size:14px;
+ margin-top:10px
 }
-.actions{display:flex;gap:8px;margin-top:10px}
-.actions button{flex:1}
-.delete{background:#b42318}
+button:disabled{opacity:.6}
 #message{
+ text-align:center;
  font-size:13px;
  line-height:1.5;
- white-space:pre-wrap
+ margin-top:12px;
+ overflow-wrap:anywhere
 }
-.hidden{display:none}
+a{
+ display:block;
+ text-align:center;
+ margin-top:18px;
+ color:#555;
+ font-size:13px
+}
 </style>
 </head>
 
 <body>
 
-<header>
-<strong>FYXITERZ OWNER</strong>
-<button class="logout" onclick="logout()">Log keluar</button>
-</header>
+<div class="box">
+<h1>FYXITERZ</h1>
+<p>Staff Login — Owner, Admin & Reseller</p>
 
-<main>
+<input id="email" type="email" placeholder="Email" autocomplete="username">
 
-<div class="panel">
-<h2>Status Owner</h2>
-<p id="status">Sedang menyemak akaun...</p>
+<input id="password" type="password" placeholder="Password" autocomplete="current-password">
+
+<button id="loginButton" onclick="login()">LOG MASUK</button>
+
+<div id="message"></div>
+
+<a href="index.html">Kembali ke Kedai</a>
 </div>
-
-<div id="dashboard" class="hidden">
-
-<div class="panel">
-<h2>Tambah Produk</h2>
-
-<label>Nama produk</label>
-<input id="name" placeholder="Contoh: Diamond Mobile Legends">
-
-<label>Penerangan</label>
-<textarea id="description" placeholder="Penerangan produk"></textarea>
-
-<label>Harga (RM)</label>
-<input id="price" type="number" min="0" step="0.01" placeholder="10.00">
-
-<label>URL gambar produk (pilihan)</label>
-<input id="image" type="url" placeholder="https://...">
-
-<button id="saveButton" onclick="saveProduct()">Simpan Produk</button>
-<p id="message"></p>
-</div>
-
-<div class="panel">
-<h2>Senarai Produk</h2>
-<div id="productList">Memuatkan produk...</div>
-</div>
-
-</div>
-</main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -130,25 +93,46 @@ const SUPABASE_KEY =
 
 const db = window.supabase.createClient(
  SUPABASE_URL,
- SUPABASE_KEY
+ SUPABASE_KEY,
+ {
+  auth:{
+   persistSession:true,
+   autoRefreshToken:true,
+   detectSessionInUrl:true,
+   storageKey:"fyxiterz-auth"
+  }
+ }
 );
 
-let editingId = null;
-let ownerVerified = false;
+async function login(){
 
-async function start(){
+ const email = document.getElementById("email").value.trim();
+ const password = document.getElementById("password").value;
+ const message = document.getElementById("message");
+ const button = document.getElementById("loginButton");
 
- const status = document.getElementById("status");
+ if(!email || !password){
+  message.textContent = "Sila masukkan email dan password.";
+  return;
+ }
+
+ button.disabled = true;
+ message.textContent = "Sedang menyemak akaun...";
 
  try {
 
-  const {data,error} = await db.auth.getUser();
+  // LOGIN
+  const {data,error} = await db.auth.signInWithPassword({
+   email,
+   password
+  });
 
-  if(error || !data.user){
-   status.textContent = "Sila log masuk melalui Staff Login dahulu.";
+  if(error){
+   message.textContent = "Login gagal: " + error.message;
    return;
   }
 
+  // SEMAK PROFIL
   const {data:profile,error:profileError} = await db
    .from("profiles")
    .select("role")
@@ -156,201 +140,70 @@ async function start(){
    .maybeSingle();
 
   if(profileError){
-   status.textContent = "Gagal membaca profil: " + profileError.message;
+   message.textContent =
+    "Gagal membaca profil: " + profileError.message;
+   await db.auth.signOut();
    return;
   }
 
-  if(!profile || String(profile.role).trim().toLowerCase() !== "owner"){
-   status.textContent = "Akses ditolak. Halaman ini khas untuk Owner.";
+  if(!profile){
+   message.textContent = "Profil akaun tidak dijumpai.";
+   await db.auth.signOut();
    return;
   }
 
-  ownerVerified = true;
+  const role = String(profile.role || "")
+   .trim()
+   .toLowerCase();
 
-  status.textContent = "Disahkan sebagai Owner.";
-  document.getElementById("dashboard").classList.remove("hidden");
+  if(!["owner","admin","reseller"].includes(role)){
+   message.textContent = "Akses ditolak. Role: " + role;
+   await db.auth.signOut();
+   return;
+  }
 
-  await loadProducts();
+  // SAHKAN SESI
+  const {data:sessionData,error:sessionError} =
+   await db.auth.getSession();
+
+  if(sessionError || !sessionData.session){
+   message.textContent =
+    "Sesi gagal disimpan. Sila cuba login semula.";
+   await db.auth.signOut();
+   return;
+  }
+
+  // OWNER PANEL
+  if(role === "owner"){
+
+   message.textContent =
+    "Login berjaya. Membuka Owner Panel...";
+
+   const ownerUrl = new URL(
+    "owner.html",
+    window.location.href
+   );
+
+   window.location.href = ownerUrl.href;
+   return;
+  }
+
+  // ADMIN DAN RESELLER
+  message.textContent =
+   "Login berjaya. Role: " + role +
+   ". Panel staff belum dibina.";
 
  } catch(error){
-  status.textContent = "Ralat sistem: " + error.message;
- }
-}
 
-async function saveProduct(){
+  message.textContent =
+   "Ralat sistem: " + error.message;
 
- if(!ownerVerified) return;
-
- const message = document.getElementById("message");
- const button = document.getElementById("saveButton");
-
- const name = document.getElementById("name").value.trim();
- const description = document.getElementById("description").value.trim();
- const priceText = document.getElementById("price").value;
- const price = Number(priceText);
- const image_url = document.getElementById("image").value.trim();
-
- if(!name || priceText === "" || !Number.isFinite(price) || price < 0){
-  message.textContent = "Masukkan nama dan harga yang sah.";
-  return;
- }
-
- const product = {
-  name,
-  description,
-  price,
-  image_url: image_url || null,
-  active: true
- };
-
- button.disabled = true;
- message.textContent = "Sedang menyimpan...";
-
- try {
-
-  let result;
-
-  if(editingId){
-   result = await db.from("products")
-    .update(product)
-    .eq("id",editingId);
-  }else{
-   result = await db.from("products").insert(product);
-  }
-
-  if(result.error){
-   message.textContent = "Gagal menyimpan: " + result.error.message;
-   return;
-  }
-
-  message.textContent = "Produk berjaya disimpan.";
-  clearForm();
-  await loadProducts();
-
- } catch(error){
-  message.textContent = "Ralat: " + error.message;
  } finally {
+
   button.disabled = false;
+
  }
 }
-
-function clearForm(){
- editingId = null;
- document.getElementById("name").value = "";
- document.getElementById("description").value = "";
- document.getElementById("price").value = "";
- document.getElementById("image").value = "";
-}
-
-async function loadProducts(){
-
- if(!ownerVerified) return;
-
- const list = document.getElementById("productList");
- list.textContent = "Memuatkan...";
-
- const {data,error} = await db.from("products")
-  .select("*")
-  .order("created_at",{ascending:false});
-
- if(error){
-  list.textContent = "Gagal memuatkan produk: " + error.message;
-  return;
- }
-
- list.replaceChildren();
-
- if(!data || data.length === 0){
-  list.textContent = "Belum ada produk.";
-  return;
- }
-
- data.forEach(p=>{
-
-  const card = document.createElement("div");
-  card.className = "product";
-
-  const title = document.createElement("strong");
-  title.textContent = p.name;
-
-  const price = document.createElement("p");
-  price.textContent = "RM " + Number(p.price).toFixed(2);
-
-  const desc = document.createElement("p");
-  desc.textContent = p.description || "";
-
-  card.append(title,price,desc);
-
-  if(p.image_url){
-   const img = document.createElement("img");
-   img.src = p.image_url;
-   img.alt = p.name;
-   img.onerror = ()=>img.remove();
-   card.append(img);
-  }
-
-  const actions = document.createElement("div");
-  actions.className = "actions";
-
-  const edit = document.createElement("button");
-  edit.textContent = "Edit";
-  edit.onclick = ()=>editProduct(p);
-
-  const del = document.createElement("button");
-  del.textContent = "Padam";
-  del.className = "delete";
-  del.onclick = ()=>deleteProduct(p.id,p.name);
-
-  actions.append(edit,del);
-  card.append(actions);
-  list.append(card);
-
- });
-}
-
-function editProduct(p){
-
- if(!ownerVerified) return;
-
- editingId = p.id;
-
- document.getElementById("name").value = p.name || "";
- document.getElementById("description").value = p.description || "";
- document.getElementById("price").value = p.price;
- document.getElementById("image").value = p.image_url || "";
-
- document.getElementById("message").textContent =
-  "Sedang mengedit produk. Tekan Simpan Produk selepas selesai.";
-
- window.scrollTo({top:0,behavior:"smooth"});
-}
-
-async function deleteProduct(id,name){
-
- if(!ownerVerified) return;
-
- if(!confirm("Padam produk " + name + "?")) return;
-
- const {error} = await db.from("products")
-  .delete()
-  .eq("id",id);
-
- if(error){
-  alert("Gagal padam: " + error.message);
-  return;
- }
-
- alert("Produk berjaya dipadam.");
- await loadProducts();
-}
-
-async function logout(){
-
- await db.auth.signOut();
- window.location.href = "staff-login.html";
-}
-
-start();
 </script>
 
 </body>
