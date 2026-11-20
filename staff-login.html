@@ -9,56 +9,87 @@
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;background:#f7f7f7;font-family:Arial,sans-serif;
- display:flex;align-items:center;justify-content:center;
- min-height:100vh;padding:20px;color:#222
+ margin:0;
+ background:#f7f7f7;
+ font-family:Arial,sans-serif;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ min-height:100vh;
+ padding:20px;
+ color:#222;
 }
 .box{
- background:white;width:100%;max-width:380px;
- padding:25px;border:1px solid #eee;border-radius:12px
+ background:white;
+ width:100%;
+ max-width:380px;
+ padding:25px;
+ border:1px solid #eee;
+ border-radius:12px;
 }
 h1{text-align:center;font-size:25px;margin:5px}
 p{text-align:center;color:#777;font-size:13px}
 input{
- width:100%;padding:13px;margin:9px 0;
- border:1px solid #ddd;border-radius:7px;font-size:14px
+ width:100%;
+ padding:13px;
+ margin:9px 0;
+ border:1px solid #ddd;
+ border-radius:7px;
+ font-size:14px;
 }
 button{
- width:100%;padding:13px;background:#222;color:white;
- border:0;border-radius:7px;font-size:14px;margin-top:10px
+ width:100%;
+ padding:13px;
+ background:#222;
+ color:white;
+ border:0;
+ border-radius:7px;
+ font-size:14px;
+ margin-top:10px;
 }
 button:disabled{opacity:.6}
 #message{
- text-align:center;font-size:13px;
- line-height:1.5;margin-top:12px;overflow-wrap:anywhere
+ text-align:center;
+ font-size:13px;
+ line-height:1.5;
+ margin-top:12px;
+ overflow-wrap:anywhere;
 }
 a{
- display:block;text-align:center;margin-top:18px;
- color:#555;font-size:13px
+ display:block;
+ text-align:center;
+ margin-top:18px;
+ color:#555;
+ font-size:13px;
 }
 </style>
 </head>
 
 <body>
+
 <div class="box">
-<h1>FYXITERZ</h1>
-<p>Staff Login — Owner, Admin & Reseller</p>
+ <h1>FYXITERZ</h1>
+ <p>Staff Login — Owner, Admin & Reseller</p>
 
-<input id="email" type="email" placeholder="Email" autocomplete="username">
-<input id="password" type="password" placeholder="Password" autocomplete="current-password">
+ <input id="email" type="email" placeholder="Email" autocomplete="username">
 
-<button id="loginButton" onclick="login()">LOG MASUK</button>
+ <input id="password" type="password" placeholder="Password" autocomplete="current-password">
 
-<div id="message"></div>
-<a href="index.html">Kembali ke Kedai</a>
+ <button id="loginButton" onclick="login()">LOG MASUK</button>
+
+ <div id="message"></div>
+
+ <a href="index.html">Kembali ke Kedai</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-const SUPABASE_URL = "https://upkyhuxacuycscywfsrh.supabase.co";
+const SUPABASE_URL =
+"https://upkyhuxacuycscywfsrh.supabase.co";
 
-const SUPABASE_KEY = "sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
+const SUPABASE_KEY =
+"sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
 
 const db = window.supabase.createClient(
  SUPABASE_URL,
@@ -82,19 +113,24 @@ async function login(){
 
  try {
 
-  // LOGIN SUPABASE
+  // 1. LOGIN
   const {data,error} = await db.auth.signInWithPassword({
-   email: email,
-   password: password
+   email,
+   password
   });
 
   if(error){
-   message.textContent = "Login gagal: " + error.message;
-   button.disabled = false;
+   message.textContent = "LOGIN ERROR: " + error.message;
    return;
   }
 
-  // SEMAK PROFIL
+  if(!data.user){
+   message.textContent = "Akaun pengguna tidak dijumpai.";
+   await db.auth.signOut();
+   return;
+  }
+
+  // 2. SEMAK PROFIL
   const {data:profile,error:profileError} = await db
    .from("profiles")
    .select("id,role")
@@ -102,50 +138,57 @@ async function login(){
    .maybeSingle();
 
   if(profileError){
-   message.textContent = "Gagal membaca profil: " + profileError.message;
+   message.textContent = "PROFILE ERROR: " + profileError.message;
    await db.auth.signOut();
-   button.disabled = false;
    return;
   }
 
   if(!profile){
    message.textContent = "Profil akaun tidak dijumpai.";
    await db.auth.signOut();
-   button.disabled = false;
    return;
   }
 
-  // SEMAK ROLE
-  const role = String(profile.role || "").trim().toLowerCase();
+  // 3. DEBUG ROLE
+  const role = String(profile.role || "")
+   .trim()
+   .toLowerCase();
 
+  message.textContent = "DEBUG ROLE: " + role;
+
+  // 4. SEMAK AKSES STAFF
   if(!["owner","admin","reseller"].includes(role)){
-   message.textContent = "Role yang dibaca: " + role +
-    ". Akaun ini bukan akaun staff.";
+   message.textContent =
+    "AKSES DITOLAK. ROLE DIBACA: " + role;
+
    await db.auth.signOut();
-   button.disabled = false;
    return;
   }
 
-  // REDIRECT OWNER
+  // 5. OWNER PANEL
   if(role === "owner"){
-   message.textContent = "Login berjaya. Membuka Owner Panel...";
-   window.location.href = "owner.html";
+   message.textContent = "Owner disahkan. Membuka panel...";
+
+   window.location.replace("owner.html");
    return;
   }
 
-  // ADMIN / RESELLER
-  message.textContent = "Login berjaya. Role: " + role +
+  // 6. ADMIN / RESELLER
+  message.textContent =
+   "Login berjaya. Role: " + role +
    ". Panel staff belum dibina.";
-
-  button.disabled = false;
 
  } catch(error){
 
-  message.textContent = "Ralat sistem: " + error.message;
+  message.textContent = "SYSTEM ERROR: " + error.message;
+
+ } finally {
+
   button.disabled = false;
 
  }
 }
 </script>
+
 </body>
 </html>
