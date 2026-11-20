@@ -5,55 +5,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FYXITERZ - Owner Panel</title>
-
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#f6f6f6;color:#222;
- font-family:Arial,sans-serif;
-}
+body{margin:0;background:#f6f6f6;color:#222;font-family:Arial,sans-serif}
 header{background:#171717;color:white;padding:20px}
 main{max-width:900px;margin:25px auto;padding:15px}
-.card{
- background:white;padding:20px;border-radius:10px;
- margin-bottom:18px;border:1px solid #eee;
-}
-input,textarea{
- width:100%;padding:12px;margin:7px 0;
- border:1px solid #ddd;border-radius:6px;font-size:14px;
-}
-button{
- padding:12px 16px;background:#222;color:white;
- border:0;border-radius:6px;cursor:pointer;margin-top:7px;
-}
+.card{background:white;padding:20px;border-radius:10px;margin-bottom:18px;border:1px solid #eee}
+input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ddd;border-radius:6px;font-size:14px}
+button{padding:12px 16px;background:#222;color:white;border:0;border-radius:6px;cursor:pointer;margin-top:7px}
 button:disabled{opacity:.5;cursor:not-allowed}
-.product{
- border:1px solid #eee;padding:14px;
- border-radius:8px;margin-top:12px;
-}
-.product img{
- width:100px;height:100px;object-fit:cover;
- display:block;margin-top:8px;
-}
-#qrPreview{
- max-width:240px;width:100%;display:none;
- margin:15px auto;border:1px solid #ddd;padding:8px;
-}
-#status,#message,#qrMessage{
- font-size:14px;line-height:1.6;overflow-wrap:anywhere;
-}
+.product{border:1px solid #eee;padding:14px;border-radius:8px;margin-top:12px}
+.product img{width:100px;height:100px;object-fit:cover;display:block;margin-top:8px}
+#qrPreview{max-width:240px;width:100%;display:none;margin:15px auto;border:1px solid #ddd;padding:8px}
 .note{font-size:13px;color:#666}
+.message{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
 </style>
 </head>
-
 <body>
-
-<header>
-<h2>FYXITERZ — OWNER PANEL</h2>
-</header>
-
+<header><h2>FYXITERZ — OWNER PANEL</h2></header>
 <main>
-
 <div class="card">
 <h3>Status Owner</h3>
 <p id="status">Sedang menyemak sesi...</p>
@@ -62,409 +32,332 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 <div id="ownerPanel" hidden>
 
-<!-- QR PEMBAYARAN -->
 <div class="card">
 <h3>QR Pembayaran</h3>
-<p class="note">
-Upload QR pembayaran. QR terkini akan disimpan untuk dipaparkan
-kepada pelanggan.
-</p>
-
-<img id="qrPreview" alt="QR pembayaran semasa">
-
-<input
- id="qrFile"
- type="file"
- accept="image/png,image/jpeg,image/webp"
->
-
-<button id="uploadQRButton" onclick="uploadQR()">
-UPLOAD / TUKAR QR
-</button>
-
-<p id="qrMessage"></p>
+<p class="note">Upload QR pembayaran untuk dipaparkan kepada pelanggan.</p>
+<img id="qrPreview" alt="QR pembayaran">
+<input id="qrFile" type="file" accept="image/png,image/jpeg,image/webp">
+<button id="uploadQRButton" onclick="uploadQR()">UPLOAD / TUKAR QR</button>
+<p id="qrMessage" class="message"></p>
 </div>
 
-<!-- TAMBAH PRODUK -->
 <div class="card">
 <h3>Tambah Produk</h3>
-
 <input id="productName" placeholder="Nama produk">
-
-<textarea id="productDescription"
-placeholder="Penerangan produk"></textarea>
-
-<input id="productPrice"
-type="number" min="0.01" step="0.01"
-placeholder="Harga RM">
-
-<input id="productImage"
-type="url" placeholder="URL gambar produk">
-
-<button id="addButton" onclick="addProduct()">
-TAMBAH PRODUK
-</button>
-
-<p id="message"></p>
+<textarea id="productDescription" placeholder="Penerangan produk"></textarea>
+<input id="productPrice" type="number" min="0.01" step="0.01" placeholder="Harga RM">
+<input id="productImage" type="url" placeholder="URL gambar produk">
+<button id="addButton" onclick="addProduct()">TAMBAH PRODUK</button>
+<p id="message" class="message"></p>
 </div>
 
-<!-- SENARAI PRODUK -->
+<div class="card">
+<h3>Pengurusan Admin & Reseller</h3>
+<p class="note">Cipta akaun staff melalui backend yang mengesahkan sesi dan role Owner.</p>
+<input id="staffEmail" type="email" autocomplete="off" placeholder="E-mel Admin / Reseller">
+<input id="staffPassword" type="password" autocomplete="new-password" placeholder="Kata laluan (minimum 12 aksara)">
+<select id="staffRole">
+<option value="admin">Admin</option>
+<option value="reseller">Reseller</option>
+</select>
+<button id="createStaffButton" onclick="createStaff()">CIPTA AKAUN STAFF</button>
+<p id="staffMessage" class="message"></p>
+</div>
+
 <div class="card">
 <h3>Senarai Produk</h3>
 <div id="productList">Memuatkan produk...</div>
 </div>
-
-<!-- PENGURUSAN STAFF -->
-<div class="card">
-<h3>Pengurusan Admin & Reseller</h3>
-<p>
-Fungsi cipta akaun Admin dan Reseller akan disambungkan
-melalui backend yang selamat.
-</p>
-<p class="note">
-Jangan cipta akaun staff dengan meletakkan Secret Key
-Supabase dalam HTML.
-</p>
-</div>
-
 </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-const SUPABASE_URL =
-"https://upkyhuxacuycscywfsrh.supabase.co";
+const SUPABASE_URL="https://upkyhuxacuycscywfsrh.supabase.co";
+const SUPABASE_KEY="sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
 
-const SUPABASE_KEY =
-"sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
-
-const db = window.supabase.createClient(
- SUPABASE_URL,
- SUPABASE_KEY,
- {
-  auth:{
-   persistSession:true,
-   autoRefreshToken:true,
-   detectSessionInUrl:true,
-   storageKey:"fyxiterz-auth"
-  }
- }
+const db=window.supabase.createClient(
+ SUPABASE_URL,SUPABASE_KEY,
+ {auth:{
+  persistSession:true,
+  autoRefreshToken:true,
+  detectSessionInUrl:true,
+  storageKey:"fyxiterz-auth"
+ }}
 );
 
-let ownerVerified = false;
+let ownerVerified=false;
 
-const statusBox = document.getElementById("status");
-const ownerPanel = document.getElementById("ownerPanel");
+const statusBox=document.getElementById("status");
+const ownerPanel=document.getElementById("ownerPanel");
 
 async function start(){
  try{
-  const {data:sessionData,error:sessionError} =
-   await db.auth.getSession();
-
-  if(sessionError){
-   statusBox.textContent =
-    "Ralat sesi: " + sessionError.message;
-   return;
-  }
+  const {data:sessionData,error:sessionError}=await db.auth.getSession();
+  if(sessionError) throw sessionError;
 
   if(!sessionData.session){
-   statusBox.textContent =
-    "Sila log masuk melalui Staff Login dahulu.";
+   statusBox.textContent="Sila log masuk melalui Staff Login dahulu.";
    return;
   }
 
-  const {data:userData,error:userError} =
-   await db.auth.getUser();
-
-  if(userError || !userData.user){
-   statusBox.textContent =
-    "Sesi tidak sah: " +
-    (userError ? userError.message : "Pengguna tiada");
+  const {data:userData,error:userError}=await db.auth.getUser();
+  if(userError||!userData.user){
+   statusBox.textContent="Sesi tidak sah. Sila log masuk semula.";
    return;
   }
 
-  const {data:profile,error:profileError} =
-   await db.from("profiles")
-    .select("role")
-    .eq("id",userData.user.id)
-    .maybeSingle();
+  const {data:profile,error:profileError}=await db
+   .from("profiles").select("role")
+   .eq("id",userData.user.id).maybeSingle();
 
-  if(profileError){
-   statusBox.textContent =
-    "Ralat profil: " + profileError.message;
+  if(profileError) throw profileError;
+
+  if(!profile||profile.role!=="owner"){
+   statusBox.textContent="Akses ditolak. Akaun bukan Owner.";
    return;
   }
 
-  if(!profile || profile.role !== "owner"){
-   statusBox.textContent =
-    "Akses ditolak. Akaun bukan Owner.";
-   return;
-  }
-
-  ownerVerified = true;
-  ownerPanel.hidden = false;
-
-  statusBox.textContent =
-   "Login berjaya sebagai Owner: " + userData.user.email;
+  ownerVerified=true;
+  ownerPanel.hidden=false;
+  statusBox.textContent="Login berjaya sebagai Owner: "+userData.user.email;
 
   await loadProducts();
   await loadQR();
-
  }catch(error){
-  statusBox.textContent =
-   "Ralat sistem: " + error.message;
+  statusBox.textContent="Ralat sistem: "+error.message;
  }
 }
 
-// =============================
-// QR PEMBAYARAN
-// =============================
+// CIPTA ADMIN / RESELLER
+async function createStaff(){
+ const email=document.getElementById("staffEmail").value.trim().toLowerCase();
+ const password=document.getElementById("staffPassword").value;
+ const role=document.getElementById("staffRole").value;
+ const button=document.getElementById("createStaffButton");
+ const message=document.getElementById("staffMessage");
 
-async function loadQR(){
- if(!ownerVerified) return;
-
- const preview = document.getElementById("qrPreview");
- const message = document.getElementById("qrMessage");
-
- message.textContent = "Memuatkan QR...";
-
- const {data,error} = await db
-  .from("store_settings")
-  .select("payment_qr_url")
-  .eq("id",1)
-  .maybeSingle();
-
- if(error){
-  message.textContent = "Gagal memuatkan QR: " + error.message;
+ if(!ownerVerified){
+  message.textContent="Sesi Owner tidak sah.";
+  return;
+ }
+ if(!email||!email.includes("@")){
+  message.textContent="Masukkan e-mel yang sah.";
+  return;
+ }
+ if(password.length<12){
+  message.textContent="Kata laluan mesti sekurang-kurangnya 12 aksara.";
+  return;
+ }
+ if(!["admin","reseller"].includes(role)){
+  message.textContent="Role tidak sah.";
   return;
  }
 
- if(data && data.payment_qr_url){
-  preview.src = data.payment_qr_url;
-  preview.style.display = "block";
-  message.textContent = "QR pembayaran semasa.";
+ button.disabled=true;
+ message.textContent="Sedang mencipta akaun...";
+
+ try{
+  const {data:sessionData,error:sessionError}=await db.auth.getSession();
+  if(sessionError) throw sessionError;
+
+  const accessToken=sessionData.session?.access_token;
+  if(!accessToken){
+   throw new Error("Sesi login tiada. Sila login semula.");
+  }
+
+  const response=await fetch(
+   SUPABASE_URL+"/functions/v1/create-staff",
+   {
+    method:"POST",
+    headers:{
+     "Content-Type":"application/json",
+     "apikey":SUPABASE_KEY,
+     "Authorization":"Bearer "+accessToken
+    },
+    body:JSON.stringify({email,password,role})
+   }
+  );
+
+  const result=await response.json().catch(()=>({}));
+
+  if(!response.ok){
+   throw new Error(result.error||"Permintaan gagal. Kod: "+response.status);
+  }
+
+  message.textContent=result.message||"Akaun berjaya dicipta.";
+  document.getElementById("staffEmail").value="";
+  document.getElementById("staffPassword").value="";
+ }catch(error){
+  message.textContent="Gagal: "+error.message;
+ }finally{
+  button.disabled=false;
+ }
+}
+
+// QR
+async function loadQR(){
+ if(!ownerVerified)return;
+ const preview=document.getElementById("qrPreview");
+ const message=document.getElementById("qrMessage");
+
+ const {data,error}=await db.from("store_settings")
+  .select("payment_qr_url").eq("id",1).maybeSingle();
+
+ if(error){
+  message.textContent="Gagal memuatkan QR: "+error.message;
+  return;
+ }
+
+ if(data?.payment_qr_url){
+  preview.src=data.payment_qr_url;
+  preview.style.display="block";
+  message.textContent="QR pembayaran semasa.";
  }else{
   preview.removeAttribute("src");
-  preview.style.display = "none";
-  message.textContent = "Belum ada QR pembayaran.";
+  preview.style.display="none";
+  message.textContent="Belum ada QR pembayaran.";
  }
 }
 
 async function uploadQR(){
- if(!ownerVerified) return;
-
- const fileInput = document.getElementById("qrFile");
- const button = document.getElementById("uploadQRButton");
- const message = document.getElementById("qrMessage");
-
- const file = fileInput.files[0];
+ if(!ownerVerified)return;
+ const fileInput=document.getElementById("qrFile");
+ const button=document.getElementById("uploadQRButton");
+ const message=document.getElementById("qrMessage");
+ const file=fileInput.files[0];
 
  if(!file){
-  message.textContent = "Pilih gambar QR dahulu.";
+  message.textContent="Pilih gambar QR dahulu.";
+  return;
+ }
+ if(!["image/png","image/jpeg","image/webp"].includes(file.type)){
+  message.textContent="Format mesti PNG, JPG atau WEBP.";
+  return;
+ }
+ if(file.size>5*1024*1024){
+  message.textContent="Saiz maksimum 5 MB.";
   return;
  }
 
- const allowedTypes = [
-  "image/png",
-  "image/jpeg",
-  "image/webp"
- ];
-
- if(!allowedTypes.includes(file.type)){
-  message.textContent = "Format mesti PNG, JPG atau WEBP.";
-  return;
- }
-
- if(file.size > 5 * 1024 * 1024){
-  message.textContent = "Saiz gambar maksimum ialah 5 MB.";
-  return;
- }
-
- button.disabled = true;
- message.textContent = "Sedang upload QR...";
+ button.disabled=true;
+ message.textContent="Sedang upload QR...";
 
  try{
-  const safeName = file.name
-   .replace(/[^a-zA-Z0-9._-]/g,"-");
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"-");
+  const filePath="owner/"+Date.now()+"-"+safeName;
 
-  const filePath =
-   "owner/" + Date.now() + "-" + safeName;
+  const {data:uploadData,error:uploadError}=await db.storage
+   .from("payment-qr").upload(filePath,file,{cacheControl:"3600",upsert:false});
 
-  const {data:uploadData,error:uploadError} =
-   await db.storage
-    .from("payment-qr")
-    .upload(filePath,file,{
-     cacheControl:"3600",
-     upsert:false
-    });
+  if(uploadError)throw uploadError;
 
-  if(uploadError){
-   message.textContent =
-    "Gagal upload: " + uploadError.message;
-   return;
-  }
+  const {data:urlData}=db.storage.from("payment-qr").getPublicUrl(uploadData.path);
 
-  const {data:urlData} = db.storage
-   .from("payment-qr")
-   .getPublicUrl(uploadData.path);
-
-  const publicUrl = urlData.publicUrl;
-
-  const {error:saveError} = await db
-   .from("store_settings")
-   .update({
-    payment_qr_url:publicUrl,
-    updated_at:new Date().toISOString()
-   })
+  const {error:saveError}=await db.from("store_settings")
+   .update({payment_qr_url:urlData.publicUrl,updated_at:new Date().toISOString()})
    .eq("id",1);
 
-  if(saveError){
-   message.textContent =
-    "Gambar telah diupload tetapi gagal simpan URL: " +
-    saveError.message;
-   return;
-  }
+  if(saveError)throw saveError;
 
-  message.textContent = "QR pembayaran berjaya dikemaskini!";
-  fileInput.value = "";
-
+  fileInput.value="";
   await loadQR();
-
+  message.textContent="QR pembayaran berjaya dikemaskini!";
  }catch(error){
-  message.textContent = "Ralat: " + error.message;
+  message.textContent="Gagal: "+error.message;
  }finally{
-  button.disabled = false;
+  button.disabled=false;
  }
 }
 
-// =============================
-// TAMBAH PRODUK
-// =============================
-
+// PRODUK
 async function addProduct(){
- if(!ownerVerified) return;
+ if(!ownerVerified)return;
 
- const name =
-  document.getElementById("productName").value.trim();
+ const name=document.getElementById("productName").value.trim();
+ const description=document.getElementById("productDescription").value.trim();
+ const price=Number(document.getElementById("productPrice").value);
+ const image_url=document.getElementById("productImage").value.trim();
+ const message=document.getElementById("message");
+ const button=document.getElementById("addButton");
 
- const description =
-  document.getElementById("productDescription").value.trim();
-
- const price =
-  Number(document.getElementById("productPrice").value);
-
- const image_url =
-  document.getElementById("productImage").value.trim();
-
- const message = document.getElementById("message");
- const button = document.getElementById("addButton");
-
- if(!name || !Number.isFinite(price) || price <= 0){
-  message.textContent = "Masukkan nama dan harga yang sah.";
+ if(!name||!Number.isFinite(price)||price<=0){
+  message.textContent="Masukkan nama dan harga yang sah.";
   return;
  }
 
- button.disabled = true;
- message.textContent = "Sedang menyimpan produk...";
+ button.disabled=true;
+ message.textContent="Sedang menyimpan produk...";
 
  try{
-  const {error} = await db.from("products").insert([{
-   name,
-   description,
-   price,
-   image_url,
-   active:true
+  const {error}=await db.from("products").insert([{
+   name,description,price,image_url,active:true
   }]);
+  if(error)throw error;
 
-  if(error){
-   message.textContent = "Gagal: " + error.message;
-   return;
-  }
-
-  message.textContent = "Produk berjaya ditambah.";
-
-  document.getElementById("productName").value = "";
-  document.getElementById("productDescription").value = "";
-  document.getElementById("productPrice").value = "";
-  document.getElementById("productImage").value = "";
-
+  message.textContent="Produk berjaya ditambah.";
+  document.getElementById("productName").value="";
+  document.getElementById("productDescription").value="";
+  document.getElementById("productPrice").value="";
+  document.getElementById("productImage").value="";
   await loadProducts();
-
  }catch(error){
-  message.textContent = error.message;
+  message.textContent="Gagal: "+error.message;
  }finally{
-  button.disabled = false;
+  button.disabled=false;
  }
 }
 
-// =============================
-// SENARAI PRODUK
-// =============================
-
 async function loadProducts(){
- if(!ownerVerified) return;
+ if(!ownerVerified)return;
+ const list=document.getElementById("productList");
+ list.textContent="Memuatkan produk...";
 
- const list = document.getElementById("productList");
- list.textContent = "Memuatkan produk...";
-
- const {data,error} = await db
-  .from("products")
-  .select("*")
-  .order("created_at",{ascending:false});
+ const {data,error}=await db.from("products")
+  .select("*").order("created_at",{ascending:false});
 
  if(error){
-  list.textContent = "Gagal: " + error.message;
+  list.textContent="Gagal: "+error.message;
   return;
  }
-
- if(!data || data.length === 0){
-  list.textContent = "Belum ada produk.";
+ if(!data?.length){
+  list.textContent="Belum ada produk.";
   return;
  }
 
  list.replaceChildren();
 
  data.forEach(product=>{
-  const item = document.createElement("div");
-  item.className = "product";
+  const item=document.createElement("div");
+  item.className="product";
 
-  const title = document.createElement("strong");
-  title.textContent = product.name;
+  const title=document.createElement("strong");
+  title.textContent=product.name;
 
-  const price = document.createElement("p");
-  price.textContent =
-   "RM " + Number(product.price).toFixed(2);
+  const price=document.createElement("p");
+  price.textContent="RM "+Number(product.price).toFixed(2);
 
-  const description = document.createElement("p");
-  description.textContent = product.description || "";
+  const description=document.createElement("p");
+  description.textContent=product.description||"";
 
   item.append(title,price,description);
 
   if(product.image_url){
-   const img = document.createElement("img");
-   img.src = product.image_url;
-   img.alt = product.name;
+   const img=document.createElement("img");
+   img.src=product.image_url;
+   img.alt=product.name;
    item.append(img);
   }
 
-  const deleteButton = document.createElement("button");
-  deleteButton.textContent = "PADAM PRODUK";
-
-  deleteButton.onclick = async ()=>{
-   if(!ownerVerified) return;
-   if(!confirm("Padam produk ini?")) return;
-
-   const {error:deleteError} = await db
-    .from("products")
-    .delete()
-    .eq("id",product.id);
-
-   if(deleteError){
-    alert(deleteError.message);
+  const deleteButton=document.createElement("button");
+  deleteButton.textContent="PADAM PRODUK";
+  deleteButton.onclick=async()=>{
+   if(!ownerVerified||!confirm("Padam produk ini?"))return;
+   const {error}=await db.from("products").delete().eq("id",product.id);
+   if(error){
+    alert(error.message);
     return;
    }
-
    await loadProducts();
   };
 
@@ -473,17 +366,12 @@ async function loadProducts(){
  });
 }
 
-// =============================
-// LOG KELUAR
-// =============================
-
 async function logout(){
  await db.auth.signOut();
- window.location.href = "staff-login.html";
+ window.location.href="staff-login.html";
 }
 
 start();
 </script>
-
 </body>
 </html>
