@@ -19,7 +19,6 @@ header{
  color:white;
  padding:20px;
 }
-header h2{margin:0}
 main{
  max-width:900px;
  margin:25px auto;
@@ -67,7 +66,6 @@ button{
  line-height:1.6;
  overflow-wrap:anywhere;
 }
-.danger{background:#b42318}
 </style>
 </head>
 
@@ -115,6 +113,7 @@ TAMBAH PRODUK
 </div>
 
 </div>
+
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -158,8 +157,14 @@ async function start(){
   }
 
   if(!sessionData.session){
-   statusBox.textContent =
-    "Sila log masuk melalui Staff Login dahulu.";
+
+   const saved =
+    localStorage.getItem("fyxiterz-auth");
+
+   statusBox.textContent = saved
+    ? "Rekod sesi ada, tetapi Supabase tidak dapat membacanya."
+    : "Rekod sesi tiada dalam Safari.";
+
    return;
   }
 
@@ -168,15 +173,17 @@ async function start(){
 
   if(userError || !userData.user){
    statusBox.textContent =
-    "Sesi tidak sah. Sila login semula.";
+    "Sesi tidak sah: " +
+    (userError ? userError.message : "Pengguna tiada");
    return;
   }
 
-  const {data:profile,error:profileError} = await db
-   .from("profiles")
-   .select("role")
-   .eq("id",userData.user.id)
-   .maybeSingle();
+  const {data:profile,error:profileError} =
+   await db
+    .from("profiles")
+    .select("role")
+    .eq("id",userData.user.id)
+    .maybeSingle();
 
   if(profileError){
    statusBox.textContent =
@@ -194,7 +201,8 @@ async function start(){
   ownerPanel.hidden = false;
 
   statusBox.textContent =
-   "Login berjaya sebagai Owner: " + userData.user.email;
+   "Login berjaya sebagai Owner: " +
+   userData.user.email;
 
   await loadProducts();
 
@@ -229,7 +237,8 @@ async function addProduct(){
   document.getElementById("addButton");
 
  if(!name || !Number.isFinite(price) || price <= 0){
-  message.textContent = "Masukkan nama dan harga yang sah.";
+  message.textContent =
+   "Masukkan nama dan harga yang sah.";
   return;
  }
 
@@ -241,19 +250,21 @@ async function addProduct(){
   const {error} = await db
    .from("products")
    .insert([{
-    name:name,
-    description:description,
-    price:price,
-    image_url:image_url,
+    name,
+    description,
+    price,
+    image_url,
     active:true
    }]);
 
   if(error){
-   message.textContent = "Gagal: " + error.message;
+   message.textContent =
+    "Gagal: " + error.message;
    return;
   }
 
-  message.textContent = "Produk berjaya ditambah.";
+  message.textContent =
+   "Produk berjaya ditambah.";
 
   document.getElementById("productName").value = "";
   document.getElementById("productDescription").value = "";
@@ -277,7 +288,9 @@ async function loadProducts(){
 
  if(!ownerVerified) return;
 
- const list = document.getElementById("productList");
+ const list =
+  document.getElementById("productList");
+
  list.textContent = "Memuatkan produk...";
 
  const {data,error} = await db
@@ -286,7 +299,8 @@ async function loadProducts(){
   .order("created_at",{ascending:false});
 
  if(error){
-  list.textContent = "Gagal: " + error.message;
+  list.textContent =
+   "Gagal: " + error.message;
   return;
  }
 
@@ -310,13 +324,10 @@ async function loadProducts(){
    "RM " + Number(product.price).toFixed(2);
 
   const description = document.createElement("p");
-  description.textContent = product.description || "";
+  description.textContent =
+   product.description || "";
 
-  const active = document.createElement("p");
-  active.textContent =
-   product.active ? "Status: Aktif" : "Status: Tidak aktif";
-
-  item.append(title,price,description,active);
+  item.append(title,price,description);
 
   if(product.image_url){
    const img = document.createElement("img");
@@ -326,14 +337,13 @@ async function loadProducts(){
   }
 
   const deleteButton = document.createElement("button");
-  deleteButton.className = "danger";
   deleteButton.textContent = "PADAM PRODUK";
 
   deleteButton.onclick = async ()=>{
 
    if(!ownerVerified) return;
 
-   if(!confirm("Betul nak padam produk ini?")) return;
+   if(!confirm("Padam produk ini?")) return;
 
    const {error:deleteError} = await db
     .from("products")
@@ -341,17 +351,19 @@ async function loadProducts(){
     .eq("id",product.id);
 
    if(deleteError){
-    alert("Gagal padam: " + deleteError.message);
+    alert(deleteError.message);
     return;
    }
 
    await loadProducts();
+
   };
 
   item.append(deleteButton);
   list.append(item);
 
  });
+
 }
 
 async function logout(){
