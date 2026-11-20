@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FYXITERZ</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f7f7f7;color:#222;font-family:Arial,sans-serif}
+header{background:white;padding:16px;border-bottom:1px solid #eee}
+.top{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:23px;font-weight:900;letter-spacing:1px}
+a{color:inherit;text-decoration:none}
+.track{font-size:13px;color:#555}
+.search{margin-top:16px}
+input{width:100%;padding:13px;border:1px solid #ddd;border-radius:9px;background:#fafafa;font-size:14px}
+nav{display:flex;justify-content:space-around;background:white;padding:13px 5px;border-bottom:1px solid #eee}
+nav a{font-size:13px;color:#555}
+main{max-width:850px;margin:auto;padding:17px}
+.categories{display:flex;gap:9px;margin:17px 0}
+.category{border:1px solid #ddd;border-radius:20px;background:white;padding:9px 17px;font-size:13px}
+.category.active{background:#222;color:white}
+.heading{display:flex;justify-content:space-between;align-items:center;margin:25px 0 14px}
+.heading h2{font-size:17px;margin:0}
+.heading a{font-size:12px;color:#777}
+.empty{background:white;border:1px solid #eee;border-radius:10px;padding:30px 15px;text-align:center;color:#888;font-size:13px}
+.products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.card{background:white;border:1px solid #eee;border-radius:10px;overflow:hidden}
+.product-image{height:115px;background:#eee;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px}
+.product-info{padding:12px}
+.product-info h3{font-size:14px;margin:0 0 8px}
+.price{font-weight:bold;font-size:14px}
+.buy{display:block;text-align:center;background:#222;color:white;padding:10px;margin-top:12px;border-radius:6px;font-size:12px}
+.panel{background:white;border:1px solid #eee;border-radius:10px;padding:17px;margin-top:22px}
+.panel h2{font-size:16px;margin-top:0}
+.panel button{background:#222;color:white;border:0;border-radius:7px;padding:12px;width:100%}
+footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;color:#777;font-size:12px;line-height:1.8}
+@media(min-width:650px){main{padding:25px}.products{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="top">
+  <div class="logo">FYXITERZ</div>
+  <a class="track" href="#track">Track Pesanan</a>
+ </div>
+ <div class="search">
+  <input id="search" placeholder="Cari game..." oninput="filterProducts()">
+ </div>
+</header>
+
+<nav>
+ <a href="#">Home</a>
+ <a href="#produk">Produk</a>
+ <a href="#track">Pesanan</a>
+</nav>
+
+<main>
+ <div class="categories">
+  <button class="category active">Semua</button>
+ </div>
+
+ <div class="heading">
+  <h2>TERLARIS</h2>
+  <a href="#produk">Lihat semua →</a>
+ </div>
+ <div class="empty">Produk terlaris akan dipaparkan di sini.</div>
+
+ <div class="heading" id="produk">
+  <h2>SEMUA PRODUK</h2>
+ </div>
+ <div class="empty" id="empty">Produk akan dipaparkan selepas Owner menambah produk.</div>
+ <div class="products" id="products"></div>
+
+ <section class="panel" id="track">
+  <h2>Track Pesanan</h2>
+  <input id="orderId" placeholder="Masukkan nombor pesanan">
+  <button onclick="trackOrder()">Semak Pesanan</button>
+  <p id="trackResult"></p>
+ </section>
+
+ <section class="panel">
+  <h2>Staff Login</h2>
+  <p>Log masuk khas untuk Owner, Admin dan Reseller.</p>
+  <a href="staff-login.html">Buka halaman Staff Login →</a>
+ </section>
+</main>
+
+<footer>
+ <strong>FYXITERZ</strong><br>
+ Platform kedai digital FYXITERZ.<br>
+ BUTUH BANTUAN?<br>
+ Hubungi sokongan FYXITERZ.<br><br>
+ © 2026 FYXITERZ. All rights reserved.
+</footer>
+
+<script>
+function filterProducts(){
+ const q=document.getElementById('search').value.toLowerCase();
+ document.querySelectorAll('.card').forEach(card=>{
+  card.style.display=card.innerText.toLowerCase().includes(q)?'':'none';
+ });
+}
+function trackOrder(){
+ document.getElementById('trackResult').textContent=
+ 'Sistem semakan pesanan belum disambungkan.';
+}
+</script>
+</body>
+</html>
