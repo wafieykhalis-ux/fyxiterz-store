@@ -28,8 +28,14 @@ button{
  border:0;border-radius:7px;font-size:14px;margin-top:10px
 }
 button:disabled{opacity:.6}
-#message{text-align:center;font-size:13px;line-height:1.5;margin-top:12px}
-a{display:block;text-align:center;margin-top:18px;color:#555;font-size:13px}
+#message{
+ text-align:center;font-size:13px;
+ line-height:1.5;margin-top:12px;overflow-wrap:anywhere
+}
+a{
+ display:block;text-align:center;margin-top:18px;
+ color:#555;font-size:13px
+}
 </style>
 </head>
 
@@ -51,77 +57,93 @@ a{display:block;text-align:center;margin-top:18px;color:#555;font-size:13px}
 
 <script>
 const SUPABASE_URL = "https://upkyhuxacuycscywfsrh.supabase.co";
+
 const SUPABASE_KEY = "sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
 
 const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
+ SUPABASE_URL,
+ SUPABASE_KEY
 );
 
 async function login(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- const message=document.getElementById("message");
- const button=document.getElementById("loginButton");
+
+ const email = document.getElementById("email").value.trim();
+ const password = document.getElementById("password").value;
+ const message = document.getElementById("message");
+ const button = document.getElementById("loginButton");
 
  if(!email || !password){
-  message.textContent="Sila masukkan email dan password.";
+  message.textContent = "Sila masukkan email dan password.";
   return;
  }
 
- button.disabled=true;
- message.textContent="Sedang menyemak akaun...";
+ button.disabled = true;
+ message.textContent = "Sedang menyemak akaun...";
 
  try {
-  const {data,error}=await db.auth.signInWithPassword({
-   email,password
+
+  // LOGIN SUPABASE
+  const {data,error} = await db.auth.signInWithPassword({
+   email: email,
+   password: password
   });
 
   if(error){
-   message.textContent="Login gagal. Semak email dan password.";
-   button.disabled=false;
+   message.textContent = "Login gagal: " + error.message;
+   button.disabled = false;
    return;
   }
 
-  const {data:profile,error:profileError}=await db
+  // SEMAK PROFIL
+  const {data:profile,error:profileError} = await db
    .from("profiles")
-   .select("role")
+   .select("id,role")
    .eq("id",data.user.id)
-   .single();
+   .maybeSingle();
 
-  if(profileError || !profile){
+  if(profileError){
+   message.textContent = "Gagal membaca profil: " + profileError.message;
    await db.auth.signOut();
-
-   message.textContent=profileError
-    ? "Ralat membaca profil: "+profileError.message
-    : "Profil akaun tidak dijumpai.";
-
-   button.disabled=false;
+   button.disabled = false;
    return;
   }
 
-  if(!["owner","admin","reseller"].includes(profile.role)){
+  if(!profile){
+   message.textContent = "Profil akaun tidak dijumpai.";
    await db.auth.signOut();
+   button.disabled = false;
+   return;
+  }
 
-   message.textContent="Role yang dibaca: "+profile.role+
+  // SEMAK ROLE
+  const role = String(profile.role || "").trim().toLowerCase();
+
+  if(!["owner","admin","reseller"].includes(role)){
+   message.textContent = "Role yang dibaca: " + role +
     ". Akaun ini bukan akaun staff.";
-
-   button.disabled=false;
+   await db.auth.signOut();
+   button.disabled = false;
    return;
   }
 
-  if(profile.role==="owner"){
-   message.textContent="Login berjaya. Membuka Owner Panel...";
-   window.location.href="owner.html";
-  } else {
-   message.textContent="Login berjaya. Role: "+profile.role+
-    ". Panel staff belum dibina.";
-   button.disabled=false;
+  // REDIRECT OWNER
+  if(role === "owner"){
+   message.textContent = "Login berjaya. Membuka Owner Panel...";
+   window.location.href = "owner.html";
+   return;
   }
 
- } catch(error) {
-  message.textContent="Ralat sambungan: "+error.message;
-  button.disabled=false;
+  // ADMIN / RESELLER
+  message.textContent = "Login berjaya. Role: " + role +
+   ". Panel staff belum dibina.";
+
+  button.disabled = false;
+
+ } catch(error){
+
+  message.textContent = "Ralat sistem: " + error.message;
+  button.disabled = false;
+
  }
 }
 </script>
