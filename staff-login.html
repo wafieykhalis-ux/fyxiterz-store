@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff Login - FYXITERZ</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#f7f7f7;font-family:Arial,sans-serif;
+ display:flex;align-items:center;justify-content:center;
+ min-height:100vh;padding:20px;color:#222
+}
+.box{
+ background:white;width:100%;max-width:380px;
+ padding:25px;border:1px solid #eee;border-radius:12px
+}
+h1{text-align:center;font-size:25px;margin:5px}
+p{text-align:center;color:#777;font-size:13px}
+input{
+ width:100%;padding:13px;margin:9px 0;
+ border:1px solid #ddd;border-radius:7px;font-size:14px
+}
+button{
+ width:100%;padding:13px;background:#222;color:white;
+ border:0;border-radius:7px;font-size:14px;margin-top:10px
+}
+#message{text-align:center;font-size:13px;line-height:1.5}
+a{display:block;text-align:center;margin-top:18px;color:#555;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="box">
+<h1>FYXITERZ</h1>
+<p>Staff Login — Owner, Admin & Reseller</p>
+
+<input id="email" type="email" placeholder="Email" autocomplete="username">
+<input id="password" type="password" placeholder="Password" autocomplete="current-password">
+
+<button id="loginButton" onclick="login()">LOG MASUK</button>
+<div id="message"></div>
+<a href="index.html">Kembali ke Kedai</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://upkyhuxacuycscywfsrh.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+async function login(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ const message=document.getElementById("message");
+ const button=document.getElementById("loginButton");
+
+ if(!email || !password){
+  message.textContent="Sila masukkan email dan password.";
+  return;
+ }
+
+ button.disabled=true;
+ message.textContent="Sedang menyemak akaun...";
+
+ const {data,error}=await db.auth.signInWithPassword({
+  email,password
+ });
+
+ if(error){
+  message.textContent="Login gagal. Semak email dan password.";
+  button.disabled=false;
+  return;
+ }
+
+ const {data:profile,error:profileError}=await db
+  .from("profiles")
+  .select("role")
+  .eq("id",data.user.id)
+  .single();
+
+ if(profileError || !profile ||
+ !["owner","admin","reseller"].includes(profile.role)){
+  await db.auth.signOut();
+  message.textContent="Akses ditolak. Akaun ini bukan akaun staff.";
+  button.disabled=false;
+  return;
+ }
+
+ message.textContent="Login berjaya. Role: "+profile.role+
+ ". Panel staff belum dibina.";
+ button.disabled=false;
+}
+</script>
+</body>
+</html>
