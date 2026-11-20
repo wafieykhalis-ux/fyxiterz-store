@@ -17,7 +17,7 @@ body{
  justify-content:center;
  min-height:100vh;
  padding:20px;
- color:#222;
+ color:#222
 }
 .box{
  background:white;
@@ -25,7 +25,7 @@ body{
  max-width:380px;
  padding:25px;
  border:1px solid #eee;
- border-radius:12px;
+ border-radius:12px
 }
 h1{text-align:center;font-size:25px;margin:5px}
 p{text-align:center;color:#777;font-size:13px}
@@ -35,7 +35,7 @@ input{
  margin:9px 0;
  border:1px solid #ddd;
  border-radius:7px;
- font-size:14px;
+ font-size:14px
 }
 button{
  width:100%;
@@ -45,7 +45,7 @@ button{
  border:0;
  border-radius:7px;
  font-size:14px;
- margin-top:10px;
+ margin-top:10px
 }
 button:disabled{opacity:.6}
 #message{
@@ -53,14 +53,14 @@ button:disabled{opacity:.6}
  font-size:13px;
  line-height:1.5;
  margin-top:12px;
- overflow-wrap:anywhere;
+ overflow-wrap:anywhere
 }
 a{
  display:block;
  text-align:center;
  margin-top:18px;
  color:#555;
- font-size:13px;
+ font-size:13px
 }
 </style>
 </head>
@@ -68,18 +68,18 @@ a{
 <body>
 
 <div class="box">
- <h1>FYXITERZ</h1>
- <p>Staff Login — Owner, Admin & Reseller</p>
+<h1>FYXITERZ</h1>
+<p>Staff Login — Owner, Admin & Reseller</p>
 
- <input id="email" type="email" placeholder="Email" autocomplete="username">
+<input id="email" type="email" placeholder="Email" autocomplete="username">
 
- <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+<input id="password" type="password" placeholder="Password" autocomplete="current-password">
 
- <button id="loginButton" onclick="login()">LOG MASUK</button>
+<button id="loginButton" onclick="login()">LOG MASUK</button>
 
- <div id="message"></div>
+<div id="message"></div>
 
- <a href="index.html">Kembali ke Kedai</a>
+<a href="index.html">Kembali ke Kedai</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -93,7 +93,15 @@ const SUPABASE_KEY =
 
 const db = window.supabase.createClient(
  SUPABASE_URL,
- SUPABASE_KEY
+ SUPABASE_KEY,
+ {
+  auth:{
+   persistSession:true,
+   autoRefreshToken:true,
+   detectSessionInUrl:true,
+   storageKey:"fyxiterz-auth"
+  }
+ }
 );
 
 async function login(){
@@ -113,32 +121,27 @@ async function login(){
 
  try {
 
-  // 1. LOGIN
+  // LOGIN
   const {data,error} = await db.auth.signInWithPassword({
    email,
    password
   });
 
   if(error){
-   message.textContent = "LOGIN ERROR: " + error.message;
+   message.textContent = "Login gagal: " + error.message;
    return;
   }
 
-  if(!data.user){
-   message.textContent = "Akaun pengguna tidak dijumpai.";
-   await db.auth.signOut();
-   return;
-  }
-
-  // 2. SEMAK PROFIL
+  // SEMAK PROFIL
   const {data:profile,error:profileError} = await db
    .from("profiles")
-   .select("id,role")
+   .select("role")
    .eq("id",data.user.id)
    .maybeSingle();
 
   if(profileError){
-   message.textContent = "PROFILE ERROR: " + profileError.message;
+   message.textContent =
+    "Gagal membaca profil: " + profileError.message;
    await db.auth.signOut();
    return;
   }
@@ -149,38 +152,51 @@ async function login(){
    return;
   }
 
-  // 3. DEBUG ROLE
   const role = String(profile.role || "")
    .trim()
    .toLowerCase();
 
-  message.textContent = "DEBUG ROLE: " + role;
-
-  // 4. SEMAK AKSES STAFF
   if(!["owner","admin","reseller"].includes(role)){
-   message.textContent =
-    "AKSES DITOLAK. ROLE DIBACA: " + role;
-
+   message.textContent = "Akses ditolak. Role: " + role;
    await db.auth.signOut();
    return;
   }
 
-  // 5. OWNER PANEL
-  if(role === "owner"){
-   message.textContent = "Owner disahkan. Membuka panel...";
+  // SAHKAN SESI
+  const {data:sessionData,error:sessionError} =
+   await db.auth.getSession();
 
-   window.location.replace("owner.html");
+  if(sessionError || !sessionData.session){
+   message.textContent =
+    "Sesi gagal disimpan. Sila cuba login semula.";
+   await db.auth.signOut();
    return;
   }
 
-  // 6. ADMIN / RESELLER
+  // OWNER PANEL
+  if(role === "owner"){
+
+   message.textContent =
+    "Login berjaya. Membuka Owner Panel...";
+
+   const ownerUrl = new URL(
+    "owner.html",
+    window.location.href
+   );
+
+   window.location.href = ownerUrl.href;
+   return;
+  }
+
+  // ADMIN DAN RESELLER
   message.textContent =
    "Login berjaya. Role: " + role +
    ". Panel staff belum dibina.";
 
  } catch(error){
 
-  message.textContent = "SYSTEM ERROR: " + error.message;
+  message.textContent =
+   "Ralat sistem: " + error.message;
 
  } finally {
 
