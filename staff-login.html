@@ -89,24 +89,38 @@ async function login(){
    .eq("id",data.user.id)
    .single();
 
-  if(profileError || !profile ||
-   !["owner","admin","reseller"].includes(profile.role)){
+  if(profileError || !profile){
    await db.auth.signOut();
-   message.textContent="Akses ditolak. Akaun ini bukan akaun staff.";
+
+   message.textContent=profileError
+    ? "Ralat membaca profil: "+profileError.message
+    : "Profil akaun tidak dijumpai.";
+
+   button.disabled=false;
+   return;
+  }
+
+  if(!["owner","admin","reseller"].includes(profile.role)){
+   await db.auth.signOut();
+
+   message.textContent="Role yang dibaca: "+profile.role+
+    ". Akaun ini bukan akaun staff.";
+
    button.disabled=false;
    return;
   }
 
   if(profile.role==="owner"){
+   message.textContent="Login berjaya. Membuka Owner Panel...";
    window.location.href="owner.html";
   } else {
    message.textContent="Login berjaya. Role: "+profile.role+
-   ". Panel staff belum dibina.";
+    ". Panel staff belum dibina.";
    button.disabled=false;
   }
 
  } catch(error) {
-  message.textContent="Ralat sambungan. Cuba lagi.";
+  message.textContent="Ralat sambungan: "+error.message;
   button.disabled=false;
  }
 }
