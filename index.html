@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FYXITERZ</title>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f7f7f7;color:#222;font-family:Arial,sans-serif}
@@ -27,9 +28,11 @@ main{max-width:850px;margin:auto;padding:17px}
 .empty{background:white;border:1px solid #eee;border-radius:10px;padding:30px 15px;text-align:center;color:#888;font-size:13px}
 .products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
 .card{background:white;border:1px solid #eee;border-radius:10px;overflow:hidden}
-.product-image{height:115px;background:#eee;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px}
+.product-image{height:150px;background:#eee;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px;overflow:hidden}
+.product-image img{width:100%;height:100%;object-fit:contain}
 .product-info{padding:12px}
 .product-info h3{font-size:14px;margin:0 0 8px}
+.description{font-size:12px;color:#777;line-height:1.5;min-height:30px}
 .price{font-weight:bold;font-size:14px}
 .buy{display:block;text-align:center;background:#222;color:white;padding:10px;margin-top:12px;border-radius:6px;font-size:12px}
 .panel{background:white;border:1px solid #eee;border-radius:10px;padding:17px;margin-top:22px}
@@ -39,6 +42,7 @@ footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;colo
 @media(min-width:650px){main{padding:25px}.products{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
+
 <body>
 
 <header>
@@ -46,6 +50,7 @@ footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;colo
   <div class="logo">FYXITERZ</div>
   <a class="track" href="#track">Track Pesanan</a>
  </div>
+
  <div class="search">
   <input id="search" placeholder="Cari game..." oninput="filterProducts()">
  </div>
@@ -58,6 +63,7 @@ footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;colo
 </nav>
 
 <main>
+
  <div class="categories">
   <button class="category active">Semua</button>
  </div>
@@ -66,12 +72,19 @@ footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;colo
   <h2>TERLARIS</h2>
   <a href="#produk">Lihat semua →</a>
  </div>
- <div class="empty">Produk terlaris akan dipaparkan di sini.</div>
+
+ <div class="empty" id="bestSeller">
+  Produk terlaris akan dipaparkan di sini.
+ </div>
 
  <div class="heading" id="produk">
   <h2>SEMUA PRODUK</h2>
  </div>
- <div class="empty" id="empty">Produk akan dipaparkan selepas Owner menambah produk.</div>
+
+ <div class="empty" id="empty">
+  Sedang memuatkan produk...
+ </div>
+
  <div class="products" id="products"></div>
 
  <section class="panel" id="track">
@@ -86,6 +99,7 @@ footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;colo
   <p>Log masuk khas untuk Owner, Admin dan Reseller.</p>
   <a href="staff-login.html">Buka halaman Staff Login →</a>
  </section>
+
 </main>
 
 <footer>
@@ -96,28 +110,169 @@ footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;colo
  © 2026 FYXITERZ. All rights reserved.
 </footer>
 
-<script>
-function filterProducts(){
- const q=document.getElementById('search').value.toLowerCase();
- document.querySelectorAll('.card').forEach(card=>{
-  card.style.display=card.innerText.toLowerCase().includes(q)?'':'none';
- });
-}
-function trackOrder(){
- document.getElementById('trackResult').textContent=
- 'Sistem semakan pesanan belum disambungkan.';
-}
-</script>
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-const SUPABASE_URL = "https://upkyhuxacuycscywfsrh.supabase.co/rest/v1/";
-const SUPABASE_KEY = "sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
+const SUPABASE_URL =
+"https://upkyhuxacuycscywfsrh.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
 
 const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
+ SUPABASE_URL,
+ SUPABASE_KEY
 );
+
+let allProducts = [];
+
+async function loadProducts(){
+
+ const empty = document.getElementById("empty");
+ const container = document.getElementById("products");
+
+ empty.textContent = "Sedang memuatkan produk...";
+ container.replaceChildren();
+
+ try{
+
+  const {data,error} = await db
+   .from("products")
+   .select("id,name,description,price,image_url,active")
+   .eq("active",true)
+   .order("created_at",{ascending:false});
+
+  if(error){
+   empty.textContent =
+    "Gagal memuatkan produk: " + error.message;
+   return;
+  }
+
+  allProducts = data || [];
+
+  if(allProducts.length === 0){
+   empty.style.display = "block";
+   empty.textContent = "Belum ada produk tersedia.";
+   return;
+  }
+
+  empty.style.display = "none";
+
+  renderProducts(allProducts);
+
+ }catch(error){
+
+  empty.textContent = "Ralat: " + error.message;
+
+ }
+}
+
+function renderProducts(products){
+
+ const container = document.getElementById("products");
+ const bestSeller = document.getElementById("bestSeller");
+
+ container.replaceChildren();
+
+ if(products.length === 0){
+  document.getElementById("empty").style.display = "block";
+  document.getElementById("empty").textContent =
+   "Produk tidak dijumpai.";
+ }else{
+  document.getElementById("empty").style.display = "none";
+ }
+
+ products.forEach(product=>{
+
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const imageBox = document.createElement("div");
+  imageBox.className = "product-image";
+
+  if(product.image_url){
+
+   const img = document.createElement("img");
+   img.src = product.image_url;
+   img.alt = product.name;
+   img.loading = "lazy";
+
+   img.onerror = ()=>{
+    imageBox.textContent = "Gambar tidak tersedia";
+   };
+
+   imageBox.appendChild(img);
+
+  }else{
+
+   imageBox.textContent = "Tiada gambar";
+
+  }
+
+  const info = document.createElement("div");
+  info.className = "product-info";
+
+  const name = document.createElement("h3");
+  name.textContent = product.name;
+
+  const description = document.createElement("p");
+  description.className = "description";
+  description.textContent = product.description || "";
+
+  const price = document.createElement("div");
+  price.className = "price";
+  price.textContent =
+   "RM " + Number(product.price).toFixed(2);
+
+  const buy = document.createElement("a");
+  buy.className = "buy";
+  buy.href = "#";
+  buy.textContent = "BELI SEKARANG";
+
+  buy.addEventListener("click",(event)=>{
+   event.preventDefault();
+   alert("Sistem pembelian belum disambungkan.");
+  });
+
+  info.append(name,description,price,buy);
+  card.append(imageBox,info);
+  container.appendChild(card);
+
+ });
+
+ bestSeller.textContent =
+  allProducts.length
+   ? allProducts[0].name + " — RM " +
+     Number(allProducts[0].price).toFixed(2)
+   : "Produk terlaris akan dipaparkan di sini.";
+
+}
+
+function filterProducts(){
+
+ const q = document
+  .getElementById("search")
+  .value.trim()
+  .toLowerCase();
+
+ const filtered = allProducts.filter(product=>
+  (product.name || "").toLowerCase().includes(q) ||
+  (product.description || "").toLowerCase().includes(q)
+ );
+
+ renderProducts(filtered);
+
+}
+
+function trackOrder(){
+
+ document.getElementById("trackResult").textContent =
+  "Sistem semakan pesanan belum disambungkan.";
+
+}
+
+loadProducts();
 </script>
+
 </body>
 </html>
