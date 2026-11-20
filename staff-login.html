@@ -25,8 +25,7 @@ input{
 }
 button{
  width:100%;padding:13px;background:#222;color:white;
- border:0;border-radius:7px;font-size:14px;margin-top:10px;
- cursor:pointer
+ border:0;border-radius:7px;font-size:14px;margin-top:10px
 }
 button:disabled{opacity:.6}
 #message{text-align:center;font-size:13px;line-height:1.5;margin-top:12px}
@@ -43,7 +42,6 @@ a{display:block;text-align:center;margin-top:18px;color:#555;font-size:13px}
 <input id="password" type="password" placeholder="Password" autocomplete="current-password">
 
 <button id="loginButton" onclick="login()">LOG MASUK</button>
-<button id="resetButton" onclick="forgotPassword()">LUPA PASSWORD?</button>
 
 <div id="message"></div>
 <a href="index.html">Kembali ke Kedai</a>
@@ -74,61 +72,43 @@ async function login(){
  button.disabled=true;
  message.textContent="Sedang menyemak akaun...";
 
- const {data,error}=await db.auth.signInWithPassword({
-  email,password
- });
+ try {
+  const {data,error}=await db.auth.signInWithPassword({
+   email,password
+  });
 
- if(error){
-  message.textContent="Login gagal. Semak email dan password.";
+  if(error){
+   message.textContent="Login gagal. Semak email dan password.";
+   button.disabled=false;
+   return;
+  }
+
+  const {data:profile,error:profileError}=await db
+   .from("profiles")
+   .select("role")
+   .eq("id",data.user.id)
+   .single();
+
+  if(profileError || !profile ||
+   !["owner","admin","reseller"].includes(profile.role)){
+   await db.auth.signOut();
+   message.textContent="Akses ditolak. Akaun ini bukan akaun staff.";
+   button.disabled=false;
+   return;
+  }
+
+  if(profile.role==="owner"){
+   window.location.href="owner.html";
+  } else {
+   message.textContent="Login berjaya. Role: "+profile.role+
+   ". Panel staff belum dibina.";
+   button.disabled=false;
+  }
+
+ } catch(error) {
+  message.textContent="Ralat sambungan. Cuba lagi.";
   button.disabled=false;
-  return;
  }
-
- const {data:profile,error:profileError}=await db
-  .from("profiles")
-  .select("role")
-  .eq("id",data.user.id)
-  .single();
-
- if(profileError || !profile ||
- !["owner","admin","reseller"].includes(profile.role)){
-  await db.auth.signOut();
-  message.textContent="Akses ditolak. Akaun ini bukan akaun staff.";
-  button.disabled=false;
-  return;
- }
-
- if(profile.role==="owner"){
-  window.location.href="owner.html";
- }else{
-  message.textContent="Login berjaya. Role: "+profile.role+
-  ". Panel staff belum dibina.";
-  button.disabled=false;
- }
-}
-
-async function forgotPassword(){
- const email=document.getElementById("email").value.trim();
- const message=document.getElementById("message");
- const button=document.getElementById("resetButton");
-
- if(!email){
-  message.textContent="Masukkan email dahulu.";
-  return;
- }
-
- button.disabled=true;
- message.textContent="Sedang menghantar permintaan reset...";
-
- const {error}=await db.auth.resetPasswordForEmail(email,{
-  redirectTo:window.location.origin+"/fyxiterz-store/reset-password.html"
- });
-
- message.textContent=error
-  ? "Gagal menghantar email reset. Sila semak tetapan Supabase."
-  : "Jika akaun wujud, email reset akan dihantar. Semak Inbox dan Spam.";
-
- button.disabled=false;
 }
 </script>
 </body>
