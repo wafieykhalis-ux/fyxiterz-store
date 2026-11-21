@@ -1,11 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FYXITERZ</title>
-
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f7f7f7;color:#222;font-family:Arial,sans-serif}
@@ -15,7 +13,7 @@ header{background:white;padding:16px;border-bottom:1px solid #eee}
 a{color:inherit;text-decoration:none}
 .track{font-size:13px;color:#555}
 .search{margin-top:16px}
-input{width:100%;padding:13px;border:1px solid #ddd;border-radius:9px;background:#fafafa;font-size:14px}
+input{width:100%;padding:13px;border:1px solid #ddd;border-radius:9px;background:#fafafa;font-size:14px;margin-bottom:10px}
 nav{display:flex;justify-content:space-around;background:white;padding:13px 5px;border-bottom:1px solid #eee}
 nav a{font-size:13px;color:#555}
 main{max-width:850px;margin:auto;padding:17px}
@@ -34,74 +32,93 @@ main{max-width:850px;margin:auto;padding:17px}
 .product-info h3{font-size:14px;margin:0 0 8px}
 .description{font-size:12px;color:#777;line-height:1.5;min-height:30px}
 .price{font-weight:bold;font-size:14px}
-.buy{display:block;text-align:center;background:#222;color:white;padding:10px;margin-top:12px;border-radius:6px;font-size:12px}
+.buy{display:block;text-align:center;background:#222;color:white;padding:10px;margin-top:12px;border-radius:6px;font-size:12px;border:0;width:100%;cursor:pointer}
 .panel{background:white;border:1px solid #eee;border-radius:10px;padding:17px;margin-top:22px}
 .panel h2{font-size:16px;margin-top:0}
-.panel button{background:#222;color:white;border:0;border-radius:7px;padding:12px;width:100%}
+button{cursor:pointer}
+.panel button,.action{background:#222;color:white;border:0;border-radius:7px;padding:12px;width:100%}
 footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;color:#777;font-size:12px;line-height:1.8}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:1000;overflow-y:auto;padding:18px}
+.modal-box{background:white;max-width:430px;margin:25px auto;padding:20px;border-radius:12px}
+.modal-box h2{font-size:18px;margin-top:0}
+.close{float:right;border:0;background:#eee;border-radius:50%;width:30px;height:30px}
+.small{font-size:12px;color:#777;line-height:1.5}
+.result{font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.qr{width:100%;max-width:250px;display:block;margin:15px auto;border:1px solid #eee;border-radius:8px}
+.notice{background:#f7f7f7;padding:12px;border-radius:8px;font-size:12px;line-height:1.6}
 @media(min-width:650px){main{padding:25px}.products{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
-
 <body>
-
 <header>
  <div class="top">
   <div class="logo">FYXITERZ</div>
   <a class="track" href="#track">Track Pesanan</a>
  </div>
-
  <div class="search">
   <input id="search" placeholder="Cari game..." oninput="filterProducts()">
  </div>
 </header>
-
 <nav>
  <a href="#">Home</a>
  <a href="#produk">Produk</a>
  <a href="#track">Pesanan</a>
 </nav>
-
 <main>
-
  <div class="categories">
   <button class="category active">Semua</button>
  </div>
-
  <div class="heading">
   <h2>TERLARIS</h2>
   <a href="#produk">Lihat semua →</a>
  </div>
-
  <div class="empty" id="bestSeller">
   Produk terlaris akan dipaparkan di sini.
  </div>
-
  <div class="heading" id="produk">
   <h2>SEMUA PRODUK</h2>
  </div>
-
- <div class="empty" id="empty">
-  Sedang memuatkan produk...
- </div>
-
+ <div class="empty" id="empty">Sedang memuatkan produk...</div>
  <div class="products" id="products"></div>
-
  <section class="panel" id="track">
   <h2>Track Pesanan</h2>
   <input id="orderId" placeholder="Masukkan nombor pesanan">
+  <input id="trackEmail" type="email" placeholder="Masukkan email pembelian">
   <button onclick="trackOrder()">Semak Pesanan</button>
-  <p id="trackResult"></p>
+  <p id="trackResult" class="result"></p>
  </section>
-
  <section class="panel">
   <h2>Staff Login</h2>
   <p>Log masuk khas untuk Owner, Admin dan Reseller.</p>
   <a href="staff-login.html">Buka halaman Staff Login →</a>
  </section>
-
 </main>
-
+<!-- CHECKOUT -->
+<div class="modal" id="checkoutModal">
+ <div class="modal-box">
+  <button class="close" onclick="closeCheckout()">X</button>
+  <h2>Checkout FYXITERZ</h2>
+  <p id="selectedProduct"></p>
+  <form id="checkoutForm">
+   <input id="customerName" placeholder="Nama penuh" maxlength="100" required>
+   <input id="customerEmail" type="email" placeholder="Email" maxlength="254" required>
+   <input id="customerWhatsapp" type="tel" placeholder="Nombor WhatsApp" maxlength="20" required>
+   <input id="quantity" type="number" min="1" max="10" value="1" required>
+   <button class="action" id="submitOrder" type="submit">BUAT PESANAN</button>
+  </form>
+  <p id="checkoutMessage" class="result"></p>
+  <div id="paymentArea" hidden>
+   <hr>
+   <h3>Bayaran DuitNow QR</h3>
+   <img id="paymentQR" class="qr" alt="QR pembayaran" hidden>
+   <p id="qrMessage" class="small"></p>
+   <div class="notice">
+    Sila buat pembayaran mengikut jumlah pesanan. Owner akan menyemak dan mengesahkan pembayaran secara manual.
+   </div>
+   <p id="newOrderNumber" class="result"></p>
+  </div>
+ </div>
+</div>
 <footer>
  <strong>FYXITERZ</strong><br>
  Platform kedai digital FYXITERZ.<br>
@@ -109,170 +126,223 @@ footer{background:white;margin-top:35px;padding:25px 18px;text-align:center;colo
  Hubungi sokongan FYXITERZ.<br><br>
  © 2026 FYXITERZ. All rights reserved.
 </footer>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 const SUPABASE_URL =
 "https://upkyhuxacuycscywfsrh.supabase.co";
-
 const SUPABASE_KEY =
 "sb_publishable_hOLvnNVnra7QbnC2xJdopg_6h4ODRR5";
-
 const db = window.supabase.createClient(
  SUPABASE_URL,
  SUPABASE_KEY
 );
-
+const FUNCTION_HEADERS = {
+ "Content-Type":"application/json",
+ "apikey":SUPABASE_KEY
+};
 let allProducts = [];
-
+let selectedProduct = null;
 async function loadProducts(){
-
  const empty = document.getElementById("empty");
  const container = document.getElementById("products");
-
  empty.textContent = "Sedang memuatkan produk...";
  container.replaceChildren();
-
  try{
-
   const {data,error} = await db
    .from("products")
    .select("id,name,description,price,image_url,active")
    .eq("active",true)
    .order("created_at",{ascending:false});
-
-  if(error){
-   empty.textContent =
-    "Gagal memuatkan produk: " + error.message;
-   return;
-  }
-
+  if(error) throw error;
   allProducts = data || [];
-
-  if(allProducts.length === 0){
+  if(!allProducts.length){
    empty.style.display = "block";
    empty.textContent = "Belum ada produk tersedia.";
    return;
   }
-
   empty.style.display = "none";
-
   renderProducts(allProducts);
-
  }catch(error){
-
-  empty.textContent = "Ralat: " + error.message;
-
+  empty.textContent = "Gagal memuatkan produk: " + error.message;
  }
 }
-
 function renderProducts(products){
-
  const container = document.getElementById("products");
  const bestSeller = document.getElementById("bestSeller");
-
+ const empty = document.getElementById("empty");
  container.replaceChildren();
-
- if(products.length === 0){
-  document.getElementById("empty").style.display = "block";
-  document.getElementById("empty").textContent =
-   "Produk tidak dijumpai.";
+ if(!products.length){
+  empty.style.display = "block";
+  empty.textContent = "Produk tidak dijumpai.";
  }else{
-  document.getElementById("empty").style.display = "none";
+  empty.style.display = "none";
  }
-
  products.forEach(product=>{
-
   const card = document.createElement("div");
   card.className = "card";
-
   const imageBox = document.createElement("div");
   imageBox.className = "product-image";
-
   if(product.image_url){
-
    const img = document.createElement("img");
    img.src = product.image_url;
    img.alt = product.name;
    img.loading = "lazy";
-
-   img.onerror = ()=>{
-    imageBox.textContent = "Gambar tidak tersedia";
-   };
-
+   img.onerror = ()=>{imageBox.textContent="Gambar tidak tersedia";};
    imageBox.appendChild(img);
-
   }else{
-
    imageBox.textContent = "Tiada gambar";
-
   }
-
   const info = document.createElement("div");
   info.className = "product-info";
-
   const name = document.createElement("h3");
   name.textContent = product.name;
-
   const description = document.createElement("p");
   description.className = "description";
   description.textContent = product.description || "";
-
   const price = document.createElement("div");
   price.className = "price";
-  price.textContent =
-   "RM " + Number(product.price).toFixed(2);
-
-  const buy = document.createElement("a");
+  price.textContent = "RM " + Number(product.price).toFixed(2);
+  const buy = document.createElement("button");
   buy.className = "buy";
-  buy.href = "#";
   buy.textContent = "BELI SEKARANG";
-
-  buy.addEventListener("click",(event)=>{
-   event.preventDefault();
-   alert("Sistem pembelian belum disambungkan.");
-  });
-
+  buy.addEventListener("click",()=>openCheckout(product));
   info.append(name,description,price,buy);
   card.append(imageBox,info);
   container.appendChild(card);
-
  });
-
- bestSeller.textContent =
-  allProducts.length
-   ? allProducts[0].name + " — RM " +
-     Number(allProducts[0].price).toFixed(2)
-   : "Produk terlaris akan dipaparkan di sini.";
-
+ bestSeller.textContent = allProducts.length
+  ? allProducts[0].name + " — RM " +
+    Number(allProducts[0].price).toFixed(2)
+  : "Produk terlaris akan dipaparkan di sini.";
 }
-
 function filterProducts(){
-
- const q = document
-  .getElementById("search")
-  .value.trim()
-  .toLowerCase();
-
+ const q = document.getElementById("search").value.trim().toLowerCase();
  const filtered = allProducts.filter(product=>
   (product.name || "").toLowerCase().includes(q) ||
   (product.description || "").toLowerCase().includes(q)
  );
-
  renderProducts(filtered);
-
 }
-
-function trackOrder(){
-
- document.getElementById("trackResult").textContent =
-  "Sistem semakan pesanan belum disambungkan.";
-
+function openCheckout(product){
+ selectedProduct = product;
+ document.getElementById("checkoutForm").reset();
+ document.getElementById("quantity").value = 1;
+ document.getElementById("checkoutMessage").textContent = "";
+ document.getElementById("paymentArea").hidden = true;
+ document.getElementById("selectedProduct").textContent =
+  product.name + " — RM " + Number(product.price).toFixed(2);
+ document.getElementById("checkoutModal").style.display = "block";
 }
-
+function closeCheckout(){
+ document.getElementById("checkoutModal").style.display = "none";
+}
+async function loadPaymentQR(){
+ const qr = document.getElementById("paymentQR");
+ const message = document.getElementById("qrMessage");
+ qr.hidden = true;
+ message.textContent = "Memuatkan QR pembayaran...";
+ try{
+  const {data,error} = await db
+   .from("store_settings")
+   .select("payment_qr_url")
+   .eq("id",1)
+   .maybeSingle();
+  if(error) throw error;
+  if(data && data.payment_qr_url){
+   qr.src = data.payment_qr_url;
+   qr.hidden = false;
+   message.textContent = "Imbas QR untuk membuat pembayaran.";
+  }else{
+   message.textContent = "QR pembayaran belum dimuat naik oleh Owner.";
+  }
+ }catch(error){
+  message.textContent = "QR belum dapat dimuatkan.";
+ }
+}
+document.getElementById("checkoutForm").addEventListener("submit",async(event)=>{
+ event.preventDefault();
+ if(!selectedProduct) return;
+ const button = document.getElementById("submitOrder");
+ const message = document.getElementById("checkoutMessage");
+ const quantity = Number(document.getElementById("quantity").value);
+ const payload = {
+  product_id:selectedProduct.id,
+  quantity:quantity,
+  customer_name:document.getElementById("customerName").value.trim(),
+  customer_email:document.getElementById("customerEmail").value.trim(),
+  customer_whatsapp:document.getElementById("customerWhatsapp").value.trim()
+ };
+ if(!Number.isInteger(quantity) || quantity < 1 || quantity > 10){
+  message.textContent = "Kuantiti mesti antara 1 hingga 10.";
+  return;
+ }
+ button.disabled = true;
+ button.textContent = "SEDANG MEMPROSES...";
+ message.textContent = "Sedang menghantar pesanan...";
+ try{
+  const response = await fetch(
+   SUPABASE_URL + "/functions/v1/create-order",
+   {
+    method:"POST",
+    headers:FUNCTION_HEADERS,
+    body:JSON.stringify(payload)
+   }
+  );
+  const result = await response.json();
+  if(!response.ok || !result.success){
+   throw new Error(result.error || "Pesanan gagal dibuat.");
+  }
+  document.getElementById("paymentArea").hidden = false;
+  document.getElementById("newOrderNumber").textContent =
+   "Nombor pesanan: " + result.order.id +
+   "\nJumlah: RM " + Number(result.order.total).toFixed(2) +
+   "\nStatus: Menunggu pembayaran";
+  message.textContent = "Pesanan berjaya dibuat!";
+  document.getElementById("checkoutForm").hidden = true;
+  await loadPaymentQR();
+ }catch(error){
+  message.textContent = "Gagal: " + error.message;
+ }finally{
+  button.disabled = false;
+  button.textContent = "BUAT PESANAN";
+ }
+});
+async function trackOrder(){
+ const orderId = document.getElementById("orderId").value.trim();
+ const email = document.getElementById("trackEmail").value.trim();
+ const resultBox = document.getElementById("trackResult");
+ if(!orderId || !email){
+  resultBox.textContent = "Masukkan nombor pesanan dan email.";
+  return;
+ }
+ resultBox.textContent = "Sedang menyemak pesanan...";
+ try{
+  const response = await fetch(
+   SUPABASE_URL + "/functions/v1/track-order",
+   {
+    method:"POST",
+    headers:FUNCTION_HEADERS,
+    body:JSON.stringify({
+     order_id:orderId,
+     email:email
+    })
+   }
+  );
+  const result = await response.json();
+  if(!response.ok || !result.success){
+   throw new Error(result.error || "Pesanan tidak dijumpai.");
+  }
+  const order = result.order;
+  resultBox.textContent =
+   "Nombor pesanan: " + order.id +
+   "\nStatus pesanan: " + order.status +
+   "\nStatus pembayaran: " + order.payment_status +
+   "\nJumlah: RM " + Number(order.total).toFixed(2);
+ }catch(error){
+  resultBox.textContent = error.message;
+ }
+}
 loadProducts();
 </script>
-
 </body>
 </html>
